@@ -1,4 +1,4 @@
-package com.example.g2gviewer;
+package com.android.g2gviewer;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -6,7 +6,10 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.TextView;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.LinearLayout;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -18,7 +21,7 @@ import java.io.IOException;
 
 public class MainActivity extends Activity {
 
-    private TextView contentView;
+    private LinearLayout linearLayout;
     private String url = "http://g2g.fm/";
     private ProgressDialog progressDialog;
 
@@ -26,7 +29,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        contentView = (TextView) findViewById(R.id.textview);
+        linearLayout = (LinearLayout) findViewById(R.id.linear_layout);
         DownloadTask task = new DownloadTask();
         task.execute();
     }
@@ -51,36 +54,48 @@ public class MainActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
-    private class DownloadTask extends AsyncTask<Void, Void, String> {
+    private class DownloadTask extends AsyncTask<Void, Void, Void> {
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
             progressDialog = new ProgressDialog(MainActivity.this);
-            progressDialog.setTitle("G2GViewer");
+            progressDialog.setTitle("Please wait");
             progressDialog.setMessage("Loading...");
             progressDialog.setIndeterminate(false);
             progressDialog.show();
         }
 
         @Override
-        protected String doInBackground(Void... urls) {
-            String res = "";
+        protected Void doInBackground(Void... urls) {
             try {
                 Document document = Jsoup.connect(url).get();
-                Elements elements = document.select(".topic_head > a > p > font");
-                for (Element e : elements) {
-                    res += e.text() + "\n";
-                }
+                final Elements movieLinks = document.select(".topic_head > a[href]");
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        for (Element e : movieLinks) {
+                            Button btnMovie = new Button(MainActivity.this);
+                            btnMovie.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                            btnMovie.setText(e.text());
+                            btnMovie.setOnClickListener(new View.OnClickListener() {
+                                @Override
+                                public void onClick(View view) {
+                                    //TO DO
+                                }
+                            });
+                            linearLayout.addView(btnMovie);
+                        }
+                    }
+                });
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            return res;
+            return null;
         }
 
         @Override
-        protected void onPostExecute(String result){
-            contentView.setText(result);
+        protected void onPostExecute(Void result) {
             progressDialog.dismiss();
         }
     }

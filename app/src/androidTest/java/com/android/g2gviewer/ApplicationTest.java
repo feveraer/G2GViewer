@@ -1,4 +1,4 @@
-package com.example.g2gviewer;
+package com.android.g2gviewer;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;
