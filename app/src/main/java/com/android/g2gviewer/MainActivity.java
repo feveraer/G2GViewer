@@ -1,6 +1,7 @@
 package com.android.g2gviewer;
 
 import android.app.Activity;
+import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.AsyncTask;
@@ -9,8 +10,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -18,20 +22,26 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 
-public class MainActivity extends Activity {
+public class MainActivity extends ListActivity implements AdapterView.OnItemClickListener {
 
     private LinearLayout linearLayout;
     public final static String LINK_G2G = "http://g2g.fm/";
     private ProgressDialog progressDialog;
     public final static String EXTRA_MESSAGE = "com.android.g2gviewer.MESSAGE";
+    private ArrayList<String> titles = new ArrayList<String>();
+    private ArrayList<Element> titles_element = new ArrayList<Element>();
+    private ArrayAdapter<String> adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        linearLayout = (LinearLayout) findViewById(R.id.main_linear_layout);
+        adapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_2,android.R.id.text1, titles);
+        setListAdapter(adapter);
+        getListView().setOnItemClickListener(this);
         DownloadTask task = new DownloadTask();
         task.execute();
     }
@@ -56,6 +66,13 @@ public class MainActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+        Intent intent = new Intent(MainActivity.this, MovieActivity.class);
+        intent.putExtra(EXTRA_MESSAGE, new String[]{titles.get(i), titles_element.get(i).attr("href")});
+        startActivity(intent);
+    }
+
     private class DownloadTask extends AsyncTask<Void, Void, Void> {
 
         @Override
@@ -77,17 +94,12 @@ public class MainActivity extends Activity {
                     @Override
                     public void run() {
                         for (final Element e : movieLinks) {
-                            Button btnMovie = new Button(MainActivity.this);
-                            btnMovie.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-                            btnMovie.setText(e.text());
-                            btnMovie.setOnClickListener(new View.OnClickListener() {
-                                @Override
-                                public void onClick(View view) {
-                                    goToMovie(view, e.attr("href"));
-                                }
-                            });
-                            linearLayout.addView(btnMovie);
+                            titles_element.add(e);
+                            titles.add(e.text());
+                            //titles.add(e.text().toString());
                         }
+                        adapter.notifyDataSetChanged(); // better in finally block
+                        Toast.makeText(MainActivity.this, "hi " + movieLinks.size(), Toast.LENGTH_LONG).show();
                     }
                 });
             } catch (IOException e) {
@@ -99,13 +111,6 @@ public class MainActivity extends Activity {
         @Override
         protected void onPostExecute(Void result) {
             progressDialog.dismiss();
-        }
-
-        public void goToMovie(View view, String link) {
-            Intent intent = new Intent(MainActivity.this, MovieActivity.class);
-            Button b = (Button) view;
-            intent.putExtra(EXTRA_MESSAGE, new String[]{b.getText().toString(), link});
-            startActivity(intent);
         }
     }
 }
