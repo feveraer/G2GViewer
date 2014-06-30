@@ -1,6 +1,5 @@
 package com.android.g2gviewer;
 
-import android.app.Activity;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Intent;
@@ -9,12 +8,9 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.LinearLayout;
-import android.widget.Toast;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -39,7 +35,7 @@ public class MainActivity extends ListActivity implements AdapterView.OnItemClic
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        adapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_2,android.R.id.text1, titles);
+        adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_2, android.R.id.text1, titles);
         setListAdapter(adapter);
         getListView().setOnItemClickListener(this);
         DownloadTask task = new DownloadTask();
@@ -99,7 +95,6 @@ public class MainActivity extends ListActivity implements AdapterView.OnItemClic
                             //titles.add(e.text().toString());
                         }
                         adapter.notifyDataSetChanged(); // better in finally block
-                        Toast.makeText(MainActivity.this, "hi " + movieLinks.size(), Toast.LENGTH_LONG).show();
                     }
                 });
             } catch (IOException e) {

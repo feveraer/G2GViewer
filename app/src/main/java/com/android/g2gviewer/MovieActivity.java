@@ -1,6 +1,5 @@
 package com.android.g2gviewer;
 
-import android.app.ActionBar;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
@@ -8,10 +7,13 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.TextView;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.widget.Toast;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
 
 import java.io.IOException;
 
@@ -19,7 +21,7 @@ public class MovieActivity extends Activity {
 
     private ProgressDialog progressDialog;
     private String movieLink;
-    private TextView textView;
+    private WebView webView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,11 +30,11 @@ public class MovieActivity extends Activity {
 
         Intent intent = getIntent();
         String[] movieRef = intent.getStringArrayExtra(MainActivity.EXTRA_MESSAGE);
-        textView = (TextView) findViewById(R.id.movie_textview);
-        ActionBar ab = getActionBar();
-        ab.setTitle(movieRef[0]);
+        webView = (WebView) findViewById(R.id.movie_view);
+        //webView.setMediaController(new MediaController(this));
+        //ActionBar ab = getActionBar();
+        //ab.setTitle(movieRef[0]);
         movieLink = MainActivity.LINK_G2G + movieRef[1];
-        textView.setText(movieLink);
 
         DownloadTask task = new DownloadTask();
         task.execute();
@@ -73,12 +75,25 @@ public class MovieActivity extends Activity {
         @Override
         protected Void doInBackground(Void... urls) {
             try {
-                final Document document = Jsoup.connect(movieLink).get();
+                final Document doc = Jsoup.connect(movieLink).get();
+                final Elements iFrame = doc.select(".postcontent iframe");
+                final Document doc2 = Jsoup.connect(iFrame.get(0).attr("src"))
+                        .referrer(movieLink)
+                        .get();
+                final Elements iFrame2 = doc2.select("iframe");
+                final Document doc3 = Jsoup.connect(iFrame2.get(0).attr("src"))
+                        .referrer(iFrame.get(0).attr("src"))
+                        .get();
+                final Elements iFrameGoogle = doc3.select("iframe");
+
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        textView.setText(textView.getText().toString() + "\n\n"
-                                + document.body().text());
+                        WebSettings wvSettings = webView.getSettings();
+                        wvSettings.setJavaScriptEnabled(true);
+                        wvSettings.setBuiltInZoomControls(true);
+                        webView.loadData(iFrameGoogle.get(0).outerHtml(), "text/html", "UTF-8");
+                        Toast.makeText(MovieActivity.this, iFrameGoogle.get(0).outerHtml(), Toast.LENGTH_LONG).show();
                     }
                 });
             } catch (IOException e) {
