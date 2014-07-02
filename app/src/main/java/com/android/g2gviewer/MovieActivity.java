@@ -5,11 +5,17 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
-import android.widget.Toast;
+import android.webkit.WebViewClient;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -22,6 +28,12 @@ public class MovieActivity extends Activity {
     private ProgressDialog progressDialog;
     private String movieLink;
     private WebView webView;
+    private LinearLayout contentView;
+    private FrameLayout customViewContainer;
+    private WebChromeClient.CustomViewCallback customViewCallback;
+    FrameLayout.LayoutParams COVER_SCREEN_GRAVITY_CENTER = new FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,8 +42,17 @@ public class MovieActivity extends Activity {
 
         Intent intent = getIntent();
         String[] movieRef = intent.getStringArrayExtra(MainActivity.EXTRA_MESSAGE);
+
+        contentView = (LinearLayout) findViewById(R.id.movie_linearlayout);
         webView = (WebView) findViewById(R.id.movie_view);
-        //webView.setMediaController(new MediaController(this));
+        customViewContainer = (FrameLayout) findViewById(R.id.fullscreen_content);
+
+        WebSettings webSettings = webView.getSettings();
+        webSettings.setPluginState(WebSettings.PluginState.ON);
+        webSettings.setJavaScriptEnabled(true);
+        webSettings.setUseWideViewPort(true);
+        webSettings.setLoadWithOverviewMode(true);
+
         //ActionBar ab = getActionBar();
         //ab.setTitle(movieRef[0]);
         movieLink = MainActivity.LINK_G2G + movieRef[1];
@@ -85,15 +106,49 @@ public class MovieActivity extends Activity {
                         .referrer(iFrame.get(0).attr("src"))
                         .get();
                 final Elements iFrameGoogle = doc3.select("iframe");
+                iFrameGoogle.attr("width", "100%");
+                iFrameGoogle.attr("allowfullscreen", "true");
 
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        WebSettings wvSettings = webView.getSettings();
-                        wvSettings.setJavaScriptEnabled(true);
-                        wvSettings.setBuiltInZoomControls(true);
-                        webView.loadData(iFrameGoogle.get(0).outerHtml(), "text/html", "UTF-8");
-                        Toast.makeText(MovieActivity.this, iFrameGoogle.get(0).outerHtml(), Toast.LENGTH_LONG).show();
+                        webView.setWebViewClient(new WebViewClient() {
+                            @Override
+                            public boolean shouldOverrideUrlLoading(WebView webview, String url) {
+                                webview.setWebChromeClient(new WebChromeClient() {
+
+                                    private View mCustomView;
+
+                                    @Override
+                                    public void onShowCustomView(View view, WebChromeClient.CustomViewCallback callback) {
+                                        // if a view already exists then immediately terminate the new one
+                                        if (mCustomView != null) {
+                                            callback.onCustomViewHidden();
+                                            return;
+                                        }
+
+                                        // Add the custom view to its container.
+                                        customViewContainer.addView(view, COVER_SCREEN_GRAVITY_CENTER);
+                                        mCustomView = view;
+                                        customViewCallback = callback;
+
+                                        // hide main browser view
+                                        contentView.setVisibility(View.GONE);
+
+                                        // Finally show the custom view container.
+                                        customViewContainer.setVisibility(View.VISIBLE);
+                                        customViewContainer.bringToFront();
+                                    }
+
+                                });
+                                webView.loadUrl(url);
+
+                                return true;
+                            }
+                        });
+                        webView.loadUrl(iFrameGoogle.get(0).attr("src"));
+                        //webView.loadData(iFrameGoogle.get(0).outerHtml(), "text/html", "UTF-8");
+                        //Toast.makeText(MovieActivity.this, iFrameGoogle.get(0).outerHtml(), Toast.LENGTH_LONG).show();
                     }
                 });
             } catch (IOException e) {

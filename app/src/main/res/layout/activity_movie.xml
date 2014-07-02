@@ -4,13 +4,21 @@
     android:layout_height="fill_parent"
     tools:context="com.android.g2gviewer.MovieActivity">
 
-    <WebView
-        android:id="@+id/movie_view"
+    <FrameLayout
+        android:id="@+id/fullscreen_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#FF000000" />
+
+    <LinearLayout
+        android:id="@+id/movie_linearlayout"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentTop="true" />
+        android:layout_height="fill_parent">
+
+        <WebView
+            android:id="@+id/movie_view"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent" />
+    </LinearLayout>
 
 </RelativeLayout>

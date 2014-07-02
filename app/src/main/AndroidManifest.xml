@@ -20,6 +20,8 @@
         </activity>
         <activity
             android:name=".MovieActivity"
+            android:hardwareAccelerated="true"
+            android:screenOrientation="landscape"
             android:label="@string/title_activity_movie"
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
             android:parentActivityName=".MainActivity">
